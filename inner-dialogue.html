@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inner Dialogue — Two-Column Journal (Fixed Build)</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151923;
+      --muted: #97a1b0;
+      --text: #e8eef7;
+      --accent: #6ea8fe;
+      --danger: #ff6b6b;
+      --ok: #38d996;
+      --border: #222838;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+
+    html, body { height: auto; min-height: 100dvh; }
+    body {
+      margin: 0;
+      font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% -10%, #1b2030, #0f1115);
+      color: var(--text);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,17,21,.7);
+      backdrop-filter: blur(8px);
+    }
+    header h1 { font-size: 18px; margin: 0; letter-spacing: .3px; font-weight: 650; }
+    header .spacer { flex: 1; }
+    header button, header .pill {
+      appearance: none; border: 1px solid var(--border); background: var(--panel);
+      color: var(--text); padding: 8px 12px; border-radius: 999px;
+      cursor: pointer; transition: .18s transform ease, .18s opacity ease, .18s background ease;
+    }
+    header button:hover { transform: translateY(-1px); }
+    header .pill { cursor: default; opacity: .85; }
+
+    /* Desktop layout */
+    .wrap { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding: 16px; height: auto; min-height: 0; }
+    aside {
+      background: linear-gradient(180deg, #151a24, #131722);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    }
+    .aside-head { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items:center; gap: 8px; }
+    .aside-head h2 { font-size: 14px; margin: 0; opacity: .9; letter-spacing: .3px; }
+    #search { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background:#0f1320; color: var(--text); }
+    .list { overflow: auto; padding: 6px; display: grid; gap: 6px; min-height: 0; }
+    .item {
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+      background: #111625; display: grid; gap: 4px; cursor: pointer; position: relative;
+    }
+    .item small { color: var(--muted); }
+    .item .actions { position: absolute; right: 8px; top: 8px; display: flex; gap: 6px; }
+    .icon-btn {
+      appearance: none; border:1px solid var(--border); background: #0e1320; color: var(--muted);
+      width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; cursor: pointer;
+    }
+    .icon-btn:hover { color: var(--text); }
+
+    main {
+      background: linear-gradient(180deg, #151a24, #131722);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: grid; grid-template-rows: auto 1fr auto; min-height: 0; overflow: hidden;
+      contain: layout;
+    }
+    .toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .role-label { font-weight: 600; letter-spacing:.3px; font-size: 14px; }
+    .hint { color: var(--muted); font-size: 13px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; min-height: 0; }
+    .col {
+      display: grid; grid-template-rows: auto 1fr auto; gap: 8px; min-height: 0;
+      border: 1px dashed #20263a; border-radius: 12px; padding: 10px;
+      background: #0f1320;
+    }
+    .col h3 { margin: 2px 2px 6px; font-size: 14px; opacity: .9; letter-spacing:.2px; }
+    .messages { overflow: auto; display: grid; gap: 8px; padding-right: 2px; min-height: 0; }
+    .bubble {
+      background: #0b1020; border:1px solid #20263a; padding: 8px 10px; border-radius: 10px;
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+    .bubble time { display:block; font-size: 11px; color: var(--muted); margin-top: 6px; }
+    textarea {
+      width: 100%; resize: none; min-height: 60px; max-height: 180px;
+      padding: 10px 12px; border-radius: 10px; border:1px solid var(--border); background: #0a0f1b; color: var(--text);
+      outline: none;
+    }
+    textarea:focus { border-color: #2a3350; }
+    .controls { display:flex; align-items:center; justify-content: space-between; gap:10px; padding: 10px 12px; border-top: 1px solid var(--border); }
+    .btn {
+      appearance: none; border:1px solid var(--border); background:#0e1320; color:#fff;
+      padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: 600;
+      transition: .18s transform ease, .18s background ease, .18s border-color ease, .18s opacity ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: linear-gradient(180deg, #2a66ff, #1f53d6); border-color: #1f53d6; }
+    .btn.success { background: linear-gradient(180deg, #24c481, #1aa169); border-color: #1aa169; }
+    .btn.danger { background: linear-gradient(180deg, #ff6b6b, #e15454); border-color: #e15454; }
+    .btn.ghost { background: transparent; }
+    .status-dot { width: 10px; height: 10px; border-radius:50%; background: #888; box-shadow: 0 0 0 2px rgba(0,0,0,.2) inset; }
+    .status-dot.live { background: #ffd166; }
+    .status-dot.idle { background: #38d996; }
+
+    .modal { position: fixed; inset: 0; display: none; place-items: center; backdrop-filter: blur(6px); background: rgba(5,7,10,.6); z-index: 20; }
+    .modal.open { display: grid; }
+    .dialog {
+      width: min(960px, 92vw); max-height: 86vh; overflow: hidden;
+      background: linear-gradient(180deg, #161b28, #141826); border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+      display: grid; grid-template-rows: auto 1fr auto;
+    }
+    .dialog header { background: transparent; position: static; border-bottom: 1px solid var(--border); }
+    .dialog .body { padding: 12px; overflow: auto; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .pair .bubble { min-height: 38px; }
+    .empty { opacity: .55; font-style: italic; }
+
+    /* Mobile layout overrides */
+    @media (max-width: 920px) {
+      .wrap { grid-template-columns: 1fr; height: auto; }
+      aside { order: 2; height: auto; max-height: 40vh; }
+      main { order: 1; grid-template-rows: auto auto auto; overflow: visible; }
+      .cols { grid-template-columns: 1fr; }
+      .col { grid-template-rows: auto auto auto; }
+      .messages { min-height: 96px; }
+      .controls { position: sticky; bottom: 0; background: linear-gradient(180deg, rgba(21,26,36,0.92), rgba(19,23,34,0.96)); border-top: 1px solid var(--border); padding-bottom: calc(env(safe-area-inset-bottom,0px) + 10px); z-index: 3; }
+    }
+
+    /* Ultra-small height (landscape phones): keep inputs visible */
+    @media (orientation: landscape) and (max-height: 520px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside { max-height: 32vh; }
+      main { grid-template-rows: auto auto auto; overflow: auto; }
+      .cols { grid-template-columns: 1fr; }
+      .messages { min-height: 80px; }
+      textarea { min-height: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="status-dot" id="statusDot" title="Session status"></div>
+    <h1>Inner Dialogue</h1>
+    <div class="spacer"></div>
+    <span class="pill" id="sessionInfo">New session</span>
+    <button class="btn ghost" id="importAllBtn" title="Import sessions from JSON">Import</button>
+    <button class="btn ghost" id="exportAllBtn" title="Export all sessions as JSON">Export All</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+  </header>
+
+  <div class="wrap">
+    <aside>
+      <div class="aside-head"><h2>Past dialogues</h2></div>
+      <div style="padding: 8px 10px;"><input id="search" type="search" placeholder="Search by date or text…" /></div>
+      <div class="list" id="historyList" aria-live="polite"></div>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <span class="role-label">Write as: <strong>Part</strong> → <strong>Self</strong> → Part …</span>
+        <span class="hint">Press <kbd>Enter</kbd> to send • <kbd>Shift</kbd>+<kbd>Enter</kbd> for newline</span>
+      </div>
+
+      <div class="cols">
+        <section class="col" aria-label="Part column">
+          <h3>Part</h3>
+          <div class="messages" id="leftMessages"></div>
+          <label class="hint" for="leftInput" style="margin:6px 2px 0;">Your Part’s words</label>
+          <textarea id="leftInput" placeholder="Type from your Part and press Enter…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); window.__submitLeft && window.__submitLeft();}"></textarea>
+        </section>
+
+        <section class="col" aria-label="Self column">
+          <h3>Self</h3>
+          <div class="messages" id="rightMessages"></div>
+          <label class="hint" for="rightInput" style="margin:6px 2px 0;">Your Self / Inner Wisdom</label>
+          <textarea id="rightInput" placeholder="Type as your Self and press Enter…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); window.__submitRight && window.__submitRight();}"></textarea>
+        </section>
+      </div>
+
+      <div class="controls">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn" id="resetBtn" title="Clear current (unsaved) session">Reset</button>
+          <span class="hint" id="unsavedHint" aria-live="polite"></span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn success" id="endBtn" title="Save this dialogue">End & Save</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal to view a saved dialogue -->
+  <div class="modal" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <div class="dialog">
+      <header><h1 id="viewTitle" style="font-size:16px; margin:0 12px;">Saved Dialogue</h1></header>
+      <div class="body" id="viewBody"></div>
+      <div class="controls">
+        <div class="hint" id="viewMeta"></div>
+        <div>
+          <button class="btn success" id="continueBtn" title="Resume this dialogue">Continue</button>
+          <button class="btn" id="copyBtn">Copy as Text</button>
+          <button class="btn primary" id="closeModalBtn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    "use strict";
+
+    // ----- Keys
+    const INDEX_KEY = 'idg:index:v1';
+    const PREFIX = 'idg:session:';
+
+    // ----- Elements
+    const els = {
+      leftInput: document.getElementById('leftInput'),
+      rightInput: document.getElementById('rightInput'),
+      leftMessages: document.getElementById('leftMessages'),
+      rightMessages: document.getElementById('rightMessages'),
+      endBtn: document.getElementById('endBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      statusDot: document.getElementById('statusDot'),
+      sessionInfo: document.getElementById('sessionInfo'),
+      historyList: document.getElementById('historyList'),
+      search: document.getElementById('search'),
+      unsavedHint: document.getElementById('unsavedHint'),
+      viewModal: document.getElementById('viewModal'),
+      viewBody: document.getElementById('viewBody'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      viewMeta: document.getElementById('viewMeta'),
+      copyBtn: document.getElementById('copyBtn'),
+      exportAllBtn: document.getElementById('exportAllBtn'),
+      importAllBtn: document.getElementById('importAllBtn'),
+      importFile: document.getElementById('importFile'),
+      continueBtn: document.getElementById('continueBtn'),
+    };
+
+    // ----- Storage helpers
+    function loadIndex() { try { return JSON.parse(localStorage.getItem(INDEX_KEY)) || []; } catch { return []; } }
+    function saveIndex(index) { localStorage.setItem(INDEX_KEY, JSON.stringify(index)); }
+    function saveSessionToStorage(id, session) { localStorage.setItem(PREFIX + id, JSON.stringify(session)); }
+    function loadSessionFromStorage(id) { const raw = localStorage.getItem(PREFIX + id); return raw ? JSON.parse(raw) : null; }
+    function deleteSessionFromStorage(id) { localStorage.removeItem(PREFIX + id); const idx = loadIndex().filter(x => x.id !== id); saveIndex(idx); }
+
+    // ----- State
+    let current = { startedAt: null, entries: [], originId: null };
+    let viewing = null;
+
+    // ----- UI helpers
+    const formatDT = d => new Date(d).toLocaleString([], { hour12: true });
+    function makeBubble(text, ts) {
+      const div = document.createElement('div');
+      div.className = 'bubble';
+      div.textContent = text;
+      const t = document.createElement('time');
+      t.textContent = formatDT(ts);
+      div.appendChild(t);
+      return div;
+    }
+    function autoResizeTA(ta) {
+      if (!ta) return;
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
+    }
+    function setStatus(live) {
+      els.statusDot && els.statusDot.classList.toggle('live', live);
+      els.statusDot && els.statusDot.classList.toggle('idle', !live);
+      if (els.unsavedHint) els.unsavedHint.textContent = live ? 'Unsaved changes' : 'Saved';
+      if (els.sessionInfo) els.sessionInfo.textContent = live ? 'Editing…' : 'New session';
+    }
+
+    // ----- Rendering
+    function renderCurrent() {
+      if (els.leftMessages) els.leftMessages.innerHTML = '';
+      if (els.rightMessages) els.rightMessages.innerHTML = '';
+      for (const entry of current.entries) {
+        const b = makeBubble(entry.text, entry.ts);
+        (entry.role === 'part' ? els.leftMessages : els.rightMessages)?.appendChild(b);
+      }
+      if (els.leftMessages) els.leftMessages.scrollTop = els.leftMessages.scrollHeight;
+      if (els.rightMessages) els.rightMessages.scrollTop = els.rightMessages.scrollHeight;
+      if (els.endBtn) els.endBtn.disabled = current.entries.length === 0;
+      setStatus(current.entries.length > 0);
+    }
+
+    function renderHistory(filter = '') {
+      const idx = loadIndex().slice().sort((a,b)=> b.createdAt - a.createdAt);
+      if (!els.historyList) return;
+      els.historyList.innerHTML = '';
+      const term = filter.trim().toLowerCase();
+      for (const meta of idx) {
+        const session = loadSessionFromStorage(meta.id);
+        if (!session) continue;
+        const dateStr = formatDT(meta.createdAt);
+        const textBlob = session.entries.map(e=>e.text).join(' ').toLowerCase();
+        if (term && !(dateStr.toLowerCase().includes(term) || textBlob.includes(term))) continue;
+
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.dataset.id = meta.id;
+        const title = document.createElement('div');
+        title.textContent = dateStr;
+        const small = document.createElement('small');
+        const countPart = session.entries.filter(e=>e.role==='part').length;
+        const countSelf = session.entries.filter(e=>e.role==='self').length;
+        small.textContent = `${countPart} Part • ${countSelf} Self • ${session.entries.length} total`;
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        const del = document.createElement('button');
+        del.className = 'icon-btn'; del.title = 'Delete'; del.innerHTML = '✕';
+        del.addEventListener('click',(ev)=>{
+          ev.stopPropagation();
+          if (confirm('Delete this saved dialogue? This cannot be undone.')) {
+            deleteSessionFromStorage(meta.id);
+            renderHistory(els.search?.value || '');
+          }
+        });
+        actions.appendChild(del);
+        item.appendChild(actions);
+        item.appendChild(title);
+        item.appendChild(small);
+        item.addEventListener('click', ()=> openSession(meta.id));
+        els.historyList.appendChild(item);
+      }
+      if (!els.historyList.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'item empty';
+        empty.textContent = 'No saved dialogues yet.';
+        els.historyList.appendChild(empty);
+      }
+    }
+
+    // ----- Actions
+    function ensureStarted(){ if (!current.startedAt) current.startedAt = Date.now(); }
+    function addEntry(role, text) {
+      const t = (text ?? '').trim();
+      if (!t) return;
+      ensureStarted();
+      current.entries.push({ role, text: t, ts: Date.now() });
+      renderCurrent();
+    }
+    function submitLeft() {
+      const val = els.leftInput?.value ?? '';
+      addEntry('part', val);
+      if (els.leftInput) { els.leftInput.value = ''; autoResizeTA(els.leftInput); }
+      els.rightInput?.focus();
+    }
+    function submitRight() {
+      const val = els.rightInput?.value ?? '';
+      addEntry('self', val);
+      if (els.rightInput) { els.rightInput.value = ''; autoResizeTA(els.rightInput); }
+      els.leftInput?.focus();
+    }
+    function endAndSave() {
+      if (!current.entries.length) return;
+      const now = Date.now();
+      const isUpdate = !!current.originId;
+      const id = isUpdate ? current.originId : String(now);
+      const session = { createdAt: current.startedAt || now, endedAt: now, entries: current.entries.slice(), version: 1 };
+      saveSessionToStorage(id, session);
+      const index = loadIndex();
+      const found = index.find(m=>m.id===id);
+      if (found) { found.createdAt = session.createdAt; found.endedAt = session.endedAt; }
+      else { index.push({ id, createdAt: session.createdAt, endedAt: session.endedAt }); }
+      saveIndex(index);
+      current = { startedAt: null, entries: [], originId: null };
+      renderCurrent();
+      renderHistory(els.search?.value || '');
+      alert(isUpdate ? 'Dialogue updated.' : 'Dialogue saved.');
+      els.leftInput?.focus();
+    }
+    function resetCurrent() {
+      if (current.entries.length && !confirm('Clear the current (unsaved) session?')) return;
+      current = { startedAt: null, entries: [], originId: null };
+      renderCurrent();
+      els.leftInput?.focus();
+    }
+    function openSession(id) {
+      const session = loadSessionFromStorage(id);
+      if (!session) return;
+      viewing = { id, session };
+      els.viewBody.innerHTML = '';
+      const left = session.entries.filter(e=>e.role==='part');
+      const right = session.entries.filter(e=>e.role==='self');
+      const n = Math.max(left.length, right.length);
+      for (let i=0; i<n; i++) {
+        const row = document.createElement('div');
+        row.className = 'pair';
+        const l = document.createElement('div'); l.className = 'bubble';
+        const r = document.createElement('div'); r.className = 'bubble';
+        if (left[i]) { l.textContent = left[i].text; const t=document.createElement('time'); t.textContent = formatDT(left[i].ts); l.appendChild(t); }
+        else { l.innerHTML = '<em class="empty">—</em>'; }
+        if (right[i]) { r.textContent = right[i].text; const t=document.createElement('time'); t.textContent = formatDT(right[i].ts); r.appendChild(t); }
+        else { r.innerHTML = '<em class="empty">—</em>'; }
+        row.appendChild(l); row.appendChild(r);
+        els.viewBody.appendChild(row);
+      }
+      const when = `${new Date(session.createdAt).toLocaleString()} → ${new Date(session.endedAt).toLocaleString()}`;
+      els.viewMeta.textContent = `Saved: ${when} • ${session.entries.length} entries`;
+      els.viewModal.classList.add('open');
+    }
+    function copyCurrentViewToClipboard() {
+      const lines = [];
+      const pairs = els.viewBody.querySelectorAll('.pair');
+      pairs.forEach(pair => {
+        const [l, r] = pair.querySelectorAll('.bubble');
+        const strip = node => node ? node.textContent.replace(/\n\s*\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?$/i,'').trim() : '';
+        const lt = strip(l), rt = strip(r);
+        if (lt) lines.push(`Part: ${lt}`);
+        if (rt) lines.push(`Self: ${rt}`);
+        if (lt || rt) lines.push('');
+      });
+      const blob = lines.join('\n');
+      navigator.clipboard.writeText(blob).then(()=>alert('Copied to clipboard.'), ()=>{
+        const ta = document.createElement('textarea');
+        ta.value = blob; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        alert('Copied to clipboard.');
+      });
+    }
+    function exportAll() {
+      const idx = loadIndex().sort((a,b)=> a.createdAt - b.createdAt);
+      const all = idx.map(meta => ({ id: meta.id, ...loadSessionFromStorage(meta.id) }));
+      const data = JSON.stringify({ exportedAt: new Date().toISOString(), sessions: all }, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'inner-dialogues.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    function importAll() { els.importFile?.click(); }
+    function handleImportFile(ev) {
+      const file = ev?.target?.files?.[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = reader.result; const data = JSON.parse(text);
+          const raw = Array.isArray(data) ? data : (Array.isArray(data.sessions) ? data.sessions : Object.values(data || {}));
+          const sessions = raw.filter(s => s && Array.isArray(s.entries));
+          if (!sessions.length) { alert('No sessions found in file.'); return; }
+          const index = loadIndex();
+          const existingTimes = new Set(index.map(m => Number(m.createdAt)));
+          const existingIds = new Set(index.map(m => String(m.id)));
+          let imported = 0, skipped = 0;
+          const base = Date.now(); let counter = 0;
+          const uniqueId = (preferred) => { let id = String(preferred || (base + (counter++))); while (existingIds.has(id) || localStorage.getItem(PREFIX + id)) { id = String(base + (counter++)); } existingIds.add(id); return id; };
+          for (const sess of sessions) {
+            const createdAt = typeof sess.createdAt === 'string' ? (Date.parse(sess.createdAt) || Date.now()) : (Number(sess.createdAt) || Date.now());
+            const endedAt = typeof sess.endedAt === 'string' ? (Date.parse(sess.endedAt) || createdAt) : (Number(sess.endedAt) || createdAt);
+            if (existingTimes.has(createdAt)) { skipped++; continue; }
+            const id = uniqueId(sess.id);
+            const clean = {
+              createdAt, endedAt,
+              entries: Array.isArray(sess.entries) ? sess.entries.filter(e => e && e.role && e.text != null).map(e => ({ role: e.role === 'self' ? 'self' : 'part', text: String(e.text), ts: typeof e.ts === 'string' ? (Date.parse(e.ts) || createdAt) : (Number(e.ts) || createdAt) })) : [],
+              version: 1
+            };
+            saveSessionToStorage(id, clean);
+            index.push({ id, createdAt: clean.createdAt, endedAt: clean.endedAt });
+            existingTimes.add(createdAt);
+            imported++;
+          }
+          saveIndex(index);
+          renderHistory(els.search?.value || '');
+          alert(`Imported ${imported} session${imported===1?'':'s'}${skipped?` (skipped ${skipped} duplicate${skipped===1?'':'s'})`:''}.`);
+        } catch (err) {
+          console.error(err);
+          alert('Could not import: invalid JSON format.');
+        } finally {
+          if (ev?.target) ev.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+    function continueFromViewing() {
+      if (!viewing || !viewing.session) return;
+      current = { startedAt: viewing.session.createdAt || Date.now(), entries: viewing.session.entries.slice(), originId: viewing.id };
+      els.viewModal.classList.remove('open');
+      renderCurrent();
+      const last = current.entries[current.entries.length - 1];
+      const nextRole = last && last.role === 'part' ? 'self' : 'part';
+      (nextRole === 'self' ? els.rightInput : els.leftInput)?.focus();
+      setStatus(true);
+    }
+    function rebuildIndexFromStorage() {
+      const idx = loadIndex();
+      if (Array.isArray(idx) && idx.length) return;
+      const found = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(PREFIX)) {
+          const id = k.slice(PREFIX.length);
+          try {
+            const s = loadSessionFromStorage(id);
+            if (s && Array.isArray(s.entries)) {
+              found.push({ id, createdAt: Number(s.createdAt) || Date.now(), endedAt: Number(s.endedAt) || Number(s.createdAt) || Date.now() });
+            }
+          } catch(e) { console.warn('reindex error', e); }
+        }
+      }
+      if (found.length) saveIndex(found);
+    }
+
+    // ----- Events
+    if (els.leftInput) els.leftInput.addEventListener('keydown', (ev)=>{ if (ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); submitLeft(); }});
+    if (els.rightInput) els.rightInput.addEventListener('keydown', (ev)=>{ if (ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); submitRight(); }});
+    if (els.leftInput) els.leftInput.addEventListener('input', ()=> autoResizeTA(els.leftInput));
+    if (els.rightInput) els.rightInput.addEventListener('input', ()=> autoResizeTA(els.rightInput));
+    els.endBtn?.addEventListener('click', endAndSave);
+    els.resetBtn?.addEventListener('click', resetCurrent);
+    els.closeModalBtn?.addEventListener('click', ()=> els.viewModal.classList.remove('open'));
+    els.copyBtn?.addEventListener('click', copyCurrentViewToClipboard);
+    els.exportAllBtn?.addEventListener('click', exportAll);
+    els.importAllBtn?.addEventListener('click', importAll);
+    els.importFile?.addEventListener('change', handleImportFile);
+    els.continueBtn?.addEventListener('click', continueFromViewing);
+    els.search?.addEventListener('input', ()=> renderHistory(els.search.value));
+
+    // ----- Init
+    function init(){
+      autoResizeTA(els.leftInput);
+      autoResizeTA(els.rightInput);
+      renderCurrent();
+      rebuildIndexFromStorage();
+      renderHistory();
+      els.leftInput?.focus();
+      // expose safe fallbacks for inline attributes
+      window.__submitLeft = submitLeft;
+      window.__submitRight = submitRight;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+    else init();
+  })();
+  </script>
+</body>
+</html>

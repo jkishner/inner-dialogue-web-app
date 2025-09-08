@@ -1,0 +1,10 @@
+{
+    "id": "inner-dialogue-two-column-journal",
+    "name": "Inner Dialogue — Two-Column Journal",
+    "version": "1.0.0",
+    "minAppVersion": "0.12.0",
+    "description": "A simple journaling tool for having a conversation with parts of yourself.",
+    "author": "Jeffrey Kishner, vibe-coded with ChatGPT",
+    "authorUrl": "https://github.com/jkishner/inner-dialogue-two-column-journal",
+    "isDesktopOnly": false
+  }

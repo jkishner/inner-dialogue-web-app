@@ -420,18 +420,51 @@
       const pairs = els.viewBody.querySelectorAll('.pair');
       pairs.forEach(pair => {
         const [l, r] = pair.querySelectorAll('.bubble');
-        const strip = node => node ? node.textContent.replace(/\n\s*\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?$/i,'').trim() : '';
-        const lt = strip(l), rt = strip(r);
+        const strip = (node) => {
+          if (!node) return '';
+          const clone = node.cloneNode(true);
+          const t = clone.querySelector('time');
+          if (t) t.remove();
+          return clone.textContent.trim();
+        };
+        const lt = strip(l);
+        const rt = strip(r);
         if (lt) lines.push(`Part: ${lt}`);
         if (rt) lines.push(`Self: ${rt}`);
         if (lt || rt) lines.push('');
       });
-      const blob = lines.join('\n');
-      navigator.clipboard.writeText(blob).then(()=>alert('Copied to clipboard.'), ()=>{
-        const ta = document.createElement('textarea');
-        ta.value = blob; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-        alert('Copied to clipboard.');
-      });
+
+      const text = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      if (!text) { alert('Nothing to copy.'); return; }
+
+      const legacyCopy = () => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.top = '0';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          try { ta.setSelectionRange(0, ta.value.length); } catch(e) {}
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          if (ok) alert('Copied to clipboard.');
+          else alert('Could not auto-copy. Here it is to select manually:\n\n' + text);
+        } catch (e) {
+          alert('Could not auto-copy. Here it is to select manually:\n\n' + text);
+        }
+      };
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+          .then(() => alert('Copied to clipboard.'))
+          .catch(() => legacyCopy());
+      } else {
+        legacyCopy();
+      }
     }
     function exportAll() {
       const idx = loadIndex().sort((a,b)=> a.createdAt - b.createdAt);
